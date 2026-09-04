@@ -1,0 +1,23 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment secrets
+.env
+
+# Generated / local data
+input/*
+output/*
+
+# Keep directory placeholders if needed
+!.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Demo face images
+data/*/face.jpg
