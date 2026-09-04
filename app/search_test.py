@@ -1,8 +1,8 @@
 from pathlib import Path
-from search.serpapi_client import SerpApiClient
-from search.matcher import find_best_social_match
-from blockchain.record import fingerprint_match
-from blockchain.client import BlockchainClient
+from app.search.serpapi_client import SerpApiClient
+from app.search.matcher import find_best_social_match
+from app.blockchain.record import fingerprint_match
+from app.blockchain.client import BlockchainClient
 
 def main():
     project_root = Path(__file__).resolve().parent.parent

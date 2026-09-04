@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path 
 import argparse
-from face.encoder import FaceEncoder
+from app.face.encoder import FaceEncoder
 
 def main():
     parser = argparse.ArgumentParser(

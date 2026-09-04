@@ -1,5 +1,5 @@
-from blockchain.client import BlockchainClient
-from blockchain.fingerprint import create_fingerprint
+from app.blockchain.client import BlockchainClient
+from app.blockchain.fingerprint import create_fingerprint
 
 
 def main():

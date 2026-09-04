@@ -1,5 +1,5 @@
-from blockchain.client import BlockchainClient
-from blockchain.verify import verify_record
+from app.blockchain.client import BlockchainClient
+from app.blockchain.verify import verify_record
 
 def main():
     print("\n" + "=" * 60)
