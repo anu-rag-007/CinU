@@ -75,4 +75,4 @@ class BlockchainClient:
     
     def get_transaction_data(self, tx_hash: str):
         transaction = self.web3.eth.get_transaction(tx_hash)
-        return transaction["input"]
+        return transaction["input"].hex()
