@@ -103,6 +103,10 @@ def main():
     print()
     print("CinU will automatically include this identity the next time the pipeline runs.")
     print()
+    
+    print()
+    print("Now you can select the demo image you want as input")
+    print("run python -m app.select_input")
 
 if __name__ == "__main__":
     main()

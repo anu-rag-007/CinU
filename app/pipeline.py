@@ -1,8 +1,7 @@
 import json
 import hashlib
-from pathlib import Path
-
 import requests
+from pathlib import Path
 
 from app.face.encoder import FaceEncoder
 from app.face.registry import build_registry, save_registry
@@ -17,25 +16,11 @@ from app.blockchain.client import BlockchainClient
 from app.blockchain.fingerprint import create_fingerprint
 
 
-# ============================================================
-# DOWNLOAD THUMBNAIL
-# ============================================================
-
 def download_thumbnail(url, output_path):
-    """
-    Download the thumbnail/image associated with the
-    selected social-media search result.
-    """
-
     if not url:
-        raise ValueError(
-            "No thumbnail URL returned."
-        )
+        raise ValueError("🫩 No thumbnail URL returned. 🫩")
 
-    response = requests.get(
-        url,
-        timeout=60,
-        headers={
+    response = requests.get(url,timeout=60,headers={
             "User-Agent": (
                 "Mozilla/5.0 "
                 "(Windows NT 10.0; Win64; x64) "
@@ -47,978 +32,443 @@ def download_thumbnail(url, output_path):
     )
 
     if not response.ok:
-        raise RuntimeError(
-            f"Thumbnail download failed "
-            f"({response.status_code})"
-        )
+        raise RuntimeError(f"😢 Thumbnail download failed ({response.status_code}) 😢")
 
-    output_path.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    output_path.parent.mkdir(parents=True,exist_ok=True)
+    output_path.write_bytes(response.content)
 
-    output_path.write_bytes(
-        response.content
-    )
-
-
-# ============================================================
-# SAVE ALL SOCIAL RESULTS
-# ============================================================
 
 def save_social_results(results, output_path):
-    """
-    Save every discovered social-media result
-    to a JSON file.
-    """
+    output_path.parent.mkdir(parents=True,exist_ok=True)
 
-    output_path.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    with open(
-        output_path,
-        "w",
-        encoding="utf-8"
-    ) as f:
-
-        json.dump(
-            results,
-            f,
-            indent=2,
-            ensure_ascii=False
-        )
+    with open(output_path,"w",encoding="utf-8") as f:
+        json.dump(results,f,indent=2,ensure_ascii=False)
 
 
-# ============================================================
-# AUTOMATIC VERIFICATION
-# ============================================================
-
-def automatic_verify(
-    blockchain,
-    tx_hash,
-    record_path,
-    discovered_path
-):
-    """
-    Automatically verify:
-
-    1. Discovered content SHA-256
-    2. Local record fingerprint
-    3. Local fingerprint against Polygon Amoy
-    4. Blockchain transaction integrity
-    """
-
+def automatic_verify(blockchain,tx_hash,record_path,discovered_path):
+    
     print()
     print("=" * 70)
-    print("                    AUTOMATIC VERIFICATION")
+    print("                    AUTOMATIC VERIFICATION 👍")
     print("=" * 70)
 
     try:
-
-        # ----------------------------------------------------
-        # Load saved record
-        # ----------------------------------------------------
-
-        with open(
-            record_path,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
+        with open(record_path,"r",encoding="utf-8") as f:
             saved = json.load(f)
-
         record = saved["record"]
-
-        saved_fingerprint = (
-            saved["fingerprint"]
-        )
-
-        # ----------------------------------------------------
+        saved_fingerprint = (saved["fingerprint"])
+        
         # 1. Verify discovered content
-        # ----------------------------------------------------
 
-        current_content_hash = (
-            sha256_file(
-                discovered_path
-            )
-        )
+        current_content_hash = (sha256_file(discovered_path))
 
-        if (
-            current_content_hash
-            == record["content_hash"]
-        ):
-
-            print(
-                "✓ Content file matches "
-                "recorded SHA-256"
-            )
-
+        if (current_content_hash == record["content_hash"]):
+            print("😁 Content file matches recorded SHA-256 😁")
             content_ok = True
 
         else:
-
-            print(
-                "✗ Content file does NOT "
-                "match recorded SHA-256"
-            )
-
+            print("😱 Content file does NOT match recorded SHA-256 😱")
             content_ok = False
 
-        # ----------------------------------------------------
         # 2. Verify local record fingerprint
-        # ----------------------------------------------------
 
-        local_fingerprint = (
-            create_fingerprint(record)
-        )
-
-        if (
-            local_fingerprint
-            == saved_fingerprint
-        ):
-
-            print(
-                "✓ Local record fingerprint is valid"
-            )
-
+        local_fingerprint = (create_fingerprint(record))
+        if (local_fingerprint == saved_fingerprint):
+            print("👌 Local record fingerprint is valid 👌")
             local_ok = True
 
         else:
-
-            print(
-                "✗ Local record fingerprint "
-                "is invalid"
-            )
-
+            print("🥲 Local record fingerprint is invalid 🥲")
             local_ok = False
 
-        # ----------------------------------------------------
         # 3. Verify fingerprint on Polygon
-        # ----------------------------------------------------
 
         polygon_ok = False
-
         try:
-
             on_chain_data = blockchain.get_transaction_data(tx_hash)
+            
+            if isinstance(on_chain_data,str):
+                if on_chain_data.startswith("0x"):
+                    on_chain_data = (on_chain_data[2:])
 
-            if isinstance(
-                on_chain_data,
-                str
-            ):
+                on_chain_data = (on_chain_data.lower())
 
-                if on_chain_data.startswith(
-                    "0x"
-                ):
-
-                    on_chain_data = (
-                        on_chain_data[2:]
-                    )
-
-                on_chain_data = (
-                    on_chain_data.lower()
-                )
-
-            expected_fingerprint = (
-                saved_fingerprint.lower()
-            )
-
-            if (
-                on_chain_data
-                == expected_fingerprint
-            ):
-
-                print(
-                    "✓ Local fingerprint "
-                    "matches Polygon Amoy"
-                )
-
+            expected_fingerprint = (saved_fingerprint.lower())
+            if (on_chain_data == expected_fingerprint):
+                print("🥳 Local fingerprint matches Polygon Amoy 🥳")
                 polygon_ok = True
 
             else:
-
-                print(
-                    "✗ Local fingerprint does "
-                    "NOT match Polygon Amoy"
-                )
+                print("😒 Local fingerprint does NOT match Polygon Amoy")
 
         except Exception as error:
+            print(" Could not verify Polygon " f"transaction: {error}")
 
-            print(
-                "✗ Could not verify Polygon "
-                f"transaction: {error}"
-            )
-
-        # ----------------------------------------------------
         # 4. Blockchain record
-        # ----------------------------------------------------
 
         if polygon_ok:
-
-            print(
-                "✓ Blockchain record is intact"
-            )
-
+            print("😊 Blockchain record is intact 😊")
             blockchain_ok = True
 
         else:
-
-            print(
-                "✗ Blockchain record "
-                "verification failed"
-            )
-
+            print("🥲 Blockchain record verification failed 🥲")
             blockchain_ok = False
 
-        # ----------------------------------------------------
         # Final verification
-        # ----------------------------------------------------
 
-        verified = (
-            content_ok
-            and local_ok
-            and polygon_ok
-            and blockchain_ok
-        )
-
+        verified = (content_ok and local_ok and polygon_ok and blockchain_ok)
         print()
         print("TX Hash:")
         print(tx_hash)
-
         print("=" * 70)
 
         if verified:
-
             print()
-            print(
-                "Verification:  ✅ VERIFIED"
-            )
+            print("Verification:  ✅ VERIFIED")
 
         else:
-
             print()
-            print(
-                "Verification:  ❌ FAILED"
-            )
-
+            print("Verification:  ❌ FAILED")
         return verified
 
     except Exception as error:
-
         print()
-        print(
-            f"✗ Automatic verification failed: "
-            f"{error}"
-        )
-
+        print(f"😫 Automatic verification failed: {error} 😫")
         return False
 
 
-# ============================================================
 # MAIN PIPELINE
-# ============================================================
 
 def run_pipeline():
+    project_root = (Path(__file__).resolve().parent.parent)
 
-    # ========================================================
-    # PROJECT PATHS
-    # ========================================================
-
-    project_root = (
-        Path(__file__).resolve().parent.parent
-    )
-
-    input_image = (
-        project_root
-        / "input"
-        / "test.jpg"
-    )
+    input_image = (project_root/ "input"/ "test.jpg")
     
-    profiles_dir = (
-        project_root
-        / "data"
-    )
+    profiles_dir = (project_root/ "data")
 
-    registry_path = (
-        project_root
-        / "output"
-        / "face_registry.json"
-    )
+    registry_path = (project_root/ "output"/ "face_registry.json")
 
-    discovered_path = (
-        project_root
-        / "output"
-        / "discovered_content.jpg"
-    )
+    discovered_path = (project_root/ "output"/ "discovered_content.jpg")
 
-    social_results_path = (
-        project_root
-        / "output"
-        / "social_results.json"
-    )
+    social_results_path = (project_root/ "output"/ "social_results.json")
 
-    records_dir = (
-        project_root
-        / "output"
-        / "records"
-    )
-
-    # ========================================================
-    # HEADER
-    # ========================================================
+    records_dir = (project_root/ "output"/ "records")
 
     print()
     print("=" * 70)
-    print("                         CIN-U")
+    print("                         CinU")
     print("                 END-TO-END PIPELINE")
     print("=" * 70)
 
     print()
-    print("Input image:")
-    print(f"  {input_image}")
-
-    # ========================================================
-    # CHECK INPUT
-    # ========================================================
+    print(f"Input image:  {input_image}")
 
     if not input_image.exists():
-
         print()
-        print(
-            "✗ Input image does not exist:"
-        )
-
-        print(
-            input_image
-        )
-
+        print("😯 Input image does not exist:" )
+        print(input_image)
         return
 
-    # ========================================================
-    # 1. AUTHORIZED FACE REGISTRY
-    # ========================================================
 
-    print("[1/7] Building authorized face registry...")
-
+    print("[1/7] Building authorized face registry... 👷🏽⚒️")
+    
     try:
-
         print()
         print("Scanning authorized profiles...")
-
-        registry = build_registry(
-            str(profiles_dir)
-        )
-
+        registry = build_registry(str(profiles_dir))
         if not registry:
-
             print()
-            print("✗ No valid authorized profiles found.")
-
+            print("🫥 No valid authorized profiles found. 🫥")
             return
 
-        save_registry(
-            registry,
-            str(registry_path)
-        )
-
+        save_registry(registry,str(registry_path))
         print()
-        print(f"✓ Registry updated with "f"{len(registry)} authorized profiles")
+        print(f" Registry updated with {len(registry)} authorized profiles")
 
     except Exception as error:
 
         print()
-        print(f"✗ Could not build face registry: "f"{error}")
+        print(f"😮 Could not build face registry: {error} 😮")
 
         return
     
-    # ========================================================
-    # 2. FACE DETECTION + MATCHING
-    # ========================================================
-
+    
     print()
-    print(
-        "[2/7] Scanning input image..."
-    )
+    print("[2/7] Scanning input image... 🗿")
 
     try:
-
         encoder = FaceEncoder()
-
-        # IMPORTANT:
-        # Your FaceEncoder uses encode(),
-        # NOT encode_image().
-
-        faces = encoder.encode(
-            str(input_image)
-        )
+        faces = encoder.encode(str(input_image))
 
         if not faces:
-
             print()
-            print(
-                "✗ No face detected."
-            )
-
+            print("😭 No face detected. 😭")
             return
-
-        print(
-            f"✓ Detected {len(faces)} face(s)"
-        )
+        
+        print(f"🥰 Detected {len(faces)} face(s) 🥰")
 
         if len(faces) > 1:
-
             print(
-                f"⚠ {len(faces)} faces detected. "
+                f" {len(faces)} faces detected. "
                 "Using the first face."
             )
 
-        query_embedding = (
-            faces[0]["embedding"]
-        )
+        query_embedding = (faces[0]["embedding"])
 
-        best_match, similarity = (
-            find_best_match(
-                query_embedding,
-                registry
-            )
+        best_match, similarity = (find_best_match(
+                query_embedding,registry)
         )
 
         if best_match is None:
-
             print()
             print(
                 "❌ No authorized identity matched."
             )
 
-            print(
-                f"Best similarity: "
-                f"{similarity:.4f}"
-            )
-
+            print(f"Best similarity: {similarity:.4f}")
             return
 
-        profile_id = (
-            best_match["profile_id"]
-        )
+        profile_id = (best_match["profile_id"])
 
         print()
-        print(
-            "✓ Authorized identity matched"
-        )
-
-        print(
-            f"  Profile: {profile_id}"
-        )
-
-        print(
-            f"  Name: "
-            f"{best_match['display_name']}"
-        )
-
-        print(
-            f"  Similarity: "
-            f"{similarity:.4f}"
-        )
+        print("🌚 Authorized identity matched 🌚")
+        print(f"  Profile: {profile_id}")
+        print(f"  Name: {best_match['display_name']}")
+        print(f"  Similarity: {similarity:.4f}")
 
     except Exception as error:
-
         print()
-        print(
-            f"✗ Face detection failed: "
-            f"{error}"
-        )
+        print(f"🥲 Face detection failed: {error} 🥲")
 
         return
 
-    # ========================================================
-    # 3. GOOGLE LENS / PUBLIC CONTENT SEARCH
-    # ========================================================
-
     print()
-    print(
-        "[3/7] Searching public web content..."
-    )
-
+    print("[3/7] Searching public web content...🧐")
+    
     try:
-
-        profile_image = (
-            project_root
-            / "data"
-            / profile_id
-            / "face.jpg"
-        )
-
+        profile_image = (project_root/ "data"/ profile_id/ "face.jpg")
         if not profile_image.exists():
-
             print()
-            print(
-                "✗ Profile image not found:"
-            )
-
-            print(
-                profile_image
-            )
-
+            print("😭 Profile image not found:")
+            print(profile_image)
             return
 
         serpapi = SerpApiClient()
 
-        # ----------------------------------------------------
         # Upload image
-        # ----------------------------------------------------
-
+        
         print()
-        print(
-            "Uploading image to Google Lens..."
-        )
+        print("Uploading image to Google Lens...🥱")
 
-        upload_result = (
-            serpapi.upload_image(
-                str(profile_image)
+        upload_result = (serpapi.upload_image(
+            str(profile_image)
             )
         )
 
-        image_id = (
-            upload_result["image_id"]
-        )
+        image_id = (upload_result["image_id"])
 
         print(
-            "✓ Image uploaded to Google Lens"
+            "🙌 Image uploaded to Google Lens 🙌"
         )
 
-        # ----------------------------------------------------
         # Exact matches
-        # ----------------------------------------------------
-
+        
         exact_results = {}
-
         try:
-
-            exact_results = (
-                serpapi.google_lens_search(
-                    image_id,
-                    search_type="exact_matches"
+            exact_results = (serpapi.google_lens_search(
+                    image_id,search_type="exact_matches"
                 )
             )
 
-            print(
-                "✓ Exact-match search completed"
-            )
+            print(" Exact-match search completed ✅")
 
         except RuntimeError as error:
+            print(f" Exact search unavailable: {error}")
 
-            print(
-                f"⚠ Exact search unavailable: "
-                f"{error}"
-            )
-
-        # ----------------------------------------------------
         # Visual matches
-        # ----------------------------------------------------
 
         visual_results = {}
-
         try:
-
-            visual_results = (
-                serpapi.google_lens_search(
-                    image_id,
-                    search_type="visual_matches"
+            visual_results = (serpapi.google_lens_search(
+                    image_id,search_type="visual_matches"
                 )
             )
-
-            print(
-                "✓ Visual-match search completed"
-            )
+            print(" Visual-match search completed ✅")
 
         except RuntimeError as error:
+            print(f"⚠ Visual search unavailable: {error}")
 
-            print(
-                f"⚠ Visual search unavailable: "
-                f"{error}"
-            )
 
-        # ----------------------------------------------------
         # Combine Lens results
-        # ----------------------------------------------------
 
         lens_results = {
-
-            "exact_matches":
-                exact_results.get(
-                    "exact_matches",
-                    []
-                ),
-
-            "visual_matches":
-                visual_results.get(
-                    "visual_matches",
-                    []
-                ),
+            "exact_matches":exact_results.get("exact_matches",[]),                        
+            "visual_matches":visual_results.get("visual_matches",[]),
         }
 
-        # ----------------------------------------------------
         # Find social-media results
-        # ----------------------------------------------------
 
-        best_social, social_results = (
-            find_best_social_match(
-                lens_results
-            )
-        )
+        best_social, social_results = (find_best_social_match(lens_results))
 
         if not social_results:
-
             print()
-            print(
-                "⚠ No social-media results discovered."
-            )
-
+            print(" No social-media results discovered.")
             return
 
-        # ====================================================
         # SAVE ALL SOCIAL RESULTS
-        # ====================================================
 
-        save_social_results(
-            social_results,
-            social_results_path
-        )
-
-        # ====================================================
-        # DISPLAY TOP 10 RESULTS
-        # ====================================================
+        save_social_results(social_results,social_results_path)
 
         print()
         print("=" * 70)
-        print(
-            "                 DISCOVERED SOCIAL CONTENT"
-        )
+        print("                 DISCOVERED SOCIAL CONTENT 🤩")
         print("=" * 70)
 
-        display_results = (
-            social_results[:10]
-        )
-
-        for index, result in enumerate(
-            display_results,
-            start=1
-        ):
-
-            platform = result.get(
-                "source",
-                "Unknown"
-            )
-
-            title = result.get(
-                "title",
-                "Untitled"
-            )
-
-            match_type = result.get(
-                "type",
-                "unknown"
-            )
-
-            url = result.get(
-                "url"
-            )
-
-            redirect_url = result.get(
-                "redirect_url"
-            )
+        display_results = (social_results[:10])
+        
+        for index, result in enumerate(display_results,start=1):
+            platform = result.get("source","Unknown")
+            title = result.get("title","Untitled")
+            match_type = result.get("type","unknown")
+            url = result.get("url")
+            redirect_url = result.get("redirect_url")
 
             print()
-            print(
-                f"[{index}] {platform}"
-            )
-
-            print(
-                f"    Title: {title}"
-            )
-
-            print(
-                f"    Type:  {match_type}"
-            )
+            print(f"[{index}] {platform}")
+            print(f"    Title: {title}")
+            print(f"    Type:  {match_type}")
 
             if url:
-
-                print(
-                    f"    URL:   {url}"
-                )
-
+                print(f"    URL:   {url}")
             elif redirect_url:
-
-                print(
-                    f"    URL:   {redirect_url}"
-                )
-
+                print(f"    URL:   {redirect_url}")
             else:
+                print("    URL:   Not available")
 
-                print(
-                    "    URL:   Not available"
-                )
-
-        # ----------------------------------------------------
-        # Remaining results
-        # ----------------------------------------------------
-
-        remaining = (
-            len(social_results)
-            - len(display_results)
-        )
+        remaining = (len(social_results) - len(display_results))
 
         if remaining > 0:
-
             print()
-            print(
-                f"... and {remaining} more results."
-            )
-
+            print(f"... and {remaining} more results.")
         print()
-        print(
-            f"Total discovered social results: "
-            f"{len(social_results)}"
-        )
-
+        print(f"Total discovered social results: {len(social_results)}")
         print()
-        print(
-            "Complete results saved to:"
-        )
+        print("Complete results saved to:")
+        print(f"  {social_results_path}")
 
-        print(
-            f"  {social_results_path}"
-        )
-
-        # ====================================================
         # BEST SOCIAL RESULT
-        # ====================================================
 
         if best_social is None:
 
             print()
-            print(
-                "⚠ No best social result available."
-            )
-
+            print(" No best social result available.")
             return
 
         print()
         print("-" * 70)
-        print(
-            "BEST SOCIAL RESULT"
-        )
+        print("BEST SOCIAL RESULT")
         print("-" * 70)
-
         print()
-
-        print(
-            f"Platform: "
-            f"{best_social.get('source')}"
-        )
-
-        print(
-            f"Title:    "
-            f"{best_social.get('title')}"
-        )
-
-        print(
-            f"Type:     "
-            f"{best_social.get('type')}"
-        )
+        print(f"Platform: {best_social.get('source')}")
+        print(f"Title:    {best_social.get('title')}")
+        print(f"Type:     "
+            f"{best_social.get('type')}")
 
         if best_social.get("url"):
-
             print(
                 f"URL:      "
                 f"{best_social.get('url')}"
             )
 
-        elif best_social.get(
-            "redirect_url"
-        ):
-
+        elif best_social.get("redirect_url"):
             print(
                 f"URL:      "
                 f"{best_social.get('redirect_url')}"
             )
 
     except Exception as error:
-
         print()
-        print(
-            f"✗ Search failed: "
-            f"{error}"
-        )
-
+        print(f" Search failed: {error}")
         return
 
-    # ========================================================
-    # 4. DOWNLOAD DISCOVERED CONTENT
-    # ========================================================
 
     print()
-    print(
-        "[4/7] Downloading discovered content..."
-    )
-
+    print("[4/7] Downloading discovered content... 🥳")
+    
     try:
-
-        thumbnail_url = (
-            best_social.get(
-                "thumbnail"
-            )
+        thumbnail_url = (best_social.get("thumbnail")
             or
-            best_social.get(
-                "thumbnail_url"
-            )
-        )
+            best_social.get("thumbnail_url"))
 
         if not thumbnail_url:
-
             print()
-            print(
-                "✗ No thumbnail available "
-                "for the best result."
-            )
-
+            print(" No thumbnail available for the best result.")
             return
 
-        download_thumbnail(
-            thumbnail_url,
-            discovered_path
-        )
-
-        print(
-            "✓ Discovered content downloaded"
-        )
-
-        print(
-            f"  Saved to: "
-            f"{discovered_path}"
-        )
+        download_thumbnail(thumbnail_url,discovered_path)
+        print("🤗 Discovered content downloaded 🤗")
+        print(f"  Saved to: {discovered_path}")
 
     except Exception as error:
-
         print()
-        print(
-            f"✗ Content download failed: "
-            f"{error}"
-        )
-
+        print(f" Content download failed: {error}")
         return
 
-    # ========================================================
-    # 5. CREATE CONTENT HASH + FINGERPRINT
-    # ========================================================
 
     print()
-    print(
-    "[5/7] Creating content fingerprint..."
-    )
+    print("[5/7] Creating content fingerprint... ☝🏽")
 
     try:
-        content_hash = (
-        sha256_file(
-            discovered_path
-        )
-    )
-
+        content_hash = (sha256_file(discovered_path))
         print()
         print("SHA-256:")
         print(content_hash)
-
-    
         best_social["content_hash"] = content_hash
-
-    
         record, fingerprint = fingerprint_match(best_social)
-
         print()
         print("Record:")
         print(record)
-
         print()
         print("Fingerprint:")
         print(fingerprint)
 
     except Exception as error:
-
         print()
         print(f"❌ Fingerprint creation failed: {error}")
-
         return
 
-        # ----------------------------------------------------
+
         # Blockchain record
-        # ----------------------------------------------------
 
         record = {
-
-            "platform":
-                best_social.get(
-                    "source"
-                ),
-
-            "title":
-                best_social.get(
-                    "title"
-                ),
-
-            "match_type":
-                best_social.get(
-                    "type"
-                ),
-
-            "content_hash":
-                content_hash,
+            "platform":best_social.get("source"),
+            "title":best_social.get("title"),
+            "match_type":best_social.get("type"),
+            "content_hash":content_hash,
         }
 
-        fingerprint = (
-            fingerprint_match(
-                record
-            )
-        )
-
+        fingerprint = (fingerprint_match(record))
         print()
-        print(
-            "Record fingerprint:"
-        )
-
-        print(
-            fingerprint
-        )
+        print("Record fingerprint:")
+        print(fingerprint)
 
     except Exception as error:
-
         print()
-        print(
-            f"✗ Fingerprint creation failed: "
-            f"{error}"
-        )
-
+        print(f" Fingerprint creation failed: {error}")
         return
 
-    # ========================================================
-    # 6. POLYGON AMOY
-    # ========================================================
 
     print()
     print("[6/7] Recording fingerprint on Polygon Amoy...")
 
     try:
         blockchain = BlockchainClient()
-
         print()
         print(f"Wallet: {blockchain.address}")
         print(f"Balance: {blockchain.get_balance()} POL")
-
         print()
         print()
         print("Sending fingerprint to Polygon Amoy...")
-
         print()
         print("DEBUG FINGERPRINT:")
         print(fingerprint)
@@ -1029,14 +479,11 @@ def run_pipeline():
 
         print()
         print("✓ Transaction submitted")
-
         print()
         print("TX Hash:")
         print(tx_hash)
-
         print()
-        print("Waiting for confirmation...")
-
+        print("Waiting for confirmation...🕑")
         receipt = blockchain.web3.eth.wait_for_transaction_receipt(tx_hash,timeout=120)
 
         if receipt.status != 1:
@@ -1045,11 +492,9 @@ def run_pipeline():
             return
 
         print()
-        print("✓ Blockchain transaction confirmed")
-
+        print(" Blockchain transaction confirmed ✅")
         print()
         print(f"Block: {receipt.blockNumber}")
-
         explorer_url = ("https://amoy.polygonscan.com/tx/" + tx_hash)
         print()
         print("Explorer:")
@@ -1057,175 +502,84 @@ def run_pipeline():
 
     except Exception as error:
         print()
-        print(f"✗ Blockchain transaction failed: {error}")
+        print(f" Blockchain transaction failed: {error}")
         return
-    
-    # ========================================================
-    # SAVE VERIFICATION RECORD
-    # ========================================================
 
     print()
-    print(
-        "Saving verification record..."
-    )
+    print("Saving verification record...💾")
 
     try:
-
-        records_dir.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        record_path = (
-            records_dir
-            / f"{tx_hash}.json"
-        )
-
+        records_dir.mkdir(parents=True,exist_ok=True)
+        record_path = (records_dir/ f"{tx_hash}.json")
         saved_record = {
-
-            "record":
-                record,
-
-            "fingerprint":
-                fingerprint,
-
-            "tx_hash":
-                tx_hash,
+            "record": record,
+            "fingerprint": fingerprint,
+            "tx_hash": tx_hash,
         }
 
-        with open(
-            record_path,
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            json.dump(
-                saved_record,
-                f,
-                indent=2,
-                ensure_ascii=False
-            )
+        with open(record_path,"w",encoding="utf-8") as f:
+            json.dump(saved_record,f,indent=2,ensure_ascii=False)
 
         print()
-        print(
-            "✓ Verification record saved"
-        )
-
-        print(
-            f"  {record_path}"
-        )
+        print("🎉 Verification record saved 🎉")
+        print(f"  {record_path}")
 
     except Exception as error:
-
         print()
-        print(
-            f"✗ Could not save verification record: "
-            f"{error}"
-        )
-
+        print(f"✗ Could not save verification record: {error}")
         return
 
-    # ========================================================
-    # 7. AUTOMATIC VERIFICATION
-    # ========================================================
 
     print()
-    print(
-        "[7/7] Automatically verifying..."
-    )
+    print("[7/7] Automatically verifying...")
 
-    verified = automatic_verify(
-        blockchain,
-        tx_hash,
-        record_path,
-        discovered_path
-    )
-
-    # ========================================================
-    # FINAL SUMMARY
-    # ========================================================
+    verified = automatic_verify(blockchain, tx_hash, record_path, discovered_path)
 
     print()
     print("=" * 70)
-    print(
-        "                    CIN-U COMPLETE"
-    )
+    print("                    CIN-U COMPLETE")
     print("=" * 70)
+    print()
+    print(f"Identity:      "
+        f"{best_match.get('display_name')}")
+
+    print(f"Profile ID:    "
+        f"{best_match.get('profile_id')}")
+
+    print(f"Similarity:    "
+        f"{similarity:.4f}")
+
+    print(f"Social results: "
+        f"{len(social_results)}")
+
+    print(f"Best platform: "
+        f"{best_social.get('source')}")
+
+    print(f"Content hash:  "
+        f"{content_hash}")
+
+    print(f"Fingerprint:   "
+        f"{fingerprint}")
+
+    print(f"TX Hash:       "
+        f"{tx_hash}")
+
+    print(f"Explorer:      "
+        f"{explorer_url}")
 
     print()
 
-    print(
-        f"Identity:      "
-        f"{best_match.get('display_name')}"
-    )
-
-    print(
-        f"Profile ID:    "
-        f"{best_match.get('profile_id')}"
-    )
-
-    print(
-        f"Similarity:    "
-        f"{similarity:.4f}"
-    )
-
-    print(
-        f"Social results: "
-        f"{len(social_results)}"
-    )
-
-    print(
-        f"Best platform: "
-        f"{best_social.get('source')}"
-    )
-
-    print(
-        f"Content hash:  "
-        f"{content_hash}"
-    )
-
-    print(
-        f"Fingerprint:   "
-        f"{fingerprint}"
-    )
-
-    print(
-        f"TX Hash:       "
-        f"{tx_hash}"
-    )
-
-    print(
-        f"Explorer:      "
-        f"{explorer_url}"
-    )
+    print(f"Results JSON:   "
+        f"{social_results_path}")
 
     print()
-
-    print(
-        f"Results JSON:   "
-        f"{social_results_path}"
-    )
-
-    print()
-
     if verified:
-
-        print(
-            "Verification:  ✅ VERIFIED"
-        )
+        print("Verification:  ✅ VERIFIED")
 
     else:
-
-        print(
-            "Verification:  ❌ FAILED"
-        )
-
+        print("Verification:  ❌ FAILED")
     print()
 
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
 
 if __name__ == "__main__":
     run_pipeline()
