@@ -10,9 +10,6 @@ def create_content_record(best_match: dict) -> dict:
 
 
 def fingerprint_match(best_match: dict):
-
     record = create_content_record(best_match)
-
     fingerprint = create_fingerprint(record)
-
     return record, fingerprint

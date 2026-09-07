@@ -5,38 +5,20 @@ load_dotenv()
 
 class BlockchainClient:
     def __init__(self):
-        rpc_url = os.getenv(
-            "POLYGON_RPC_URL"
-        )
-
-        private_key = os.getenv(
-            "PRIVATE_KEY"
-        )
-
+        rpc_url = os.getenv("POLYGON_RPC_URL")
+        private_key = os.getenv("PRIVATE_KEY")
         if not rpc_url:
-            raise RuntimeError(
-                "POLYGON_RPC_URL is missing from .env"
-            )
+            raise RuntimeError("POLYGON_RPC_URL is missing from .env")
 
         if not private_key:
-            raise RuntimeError(
-                "PRIVATE_KEY is missing from .env"
-            )
+            raise RuntimeError("PRIVATE_KEY is missing from .env")
 
-        self.web3 = Web3(
-            Web3.HTTPProvider(rpc_url)
-        )
-
+        self.web3 = Web3(Web3.HTTPProvider(rpc_url))
         if not self.web3.is_connected():
-            raise RuntimeError(
-                "Could not connect to Polygon Amoy"
-            )
+            raise RuntimeError("Could not connect to Polygon Amoy")
 
         self.private_key = private_key
-        self.account = self.web3.eth.account.from_key(
-            private_key
-        )
-
+        self.account = self.web3.eth.account.from_key(private_key)
         self.address = self.account.address
         print(f"Connected wallet: {self.address}")
 
@@ -57,17 +39,8 @@ class BlockchainClient:
             "data": bytes.fromhex(fingerprint),
         }
 
-        signed_transaction = (
-            self.web3.eth.account.sign_transaction(
-                transaction,
-                self.private_key,
-            )
-        )
-
-        tx_hash = self.web3.eth.send_raw_transaction(
-            signed_transaction.raw_transaction
-        )
-
+        signed_transaction = (self.web3.eth.account.sign_transaction(transaction,self.private_key,))
+        tx_hash = self.web3.eth.send_raw_transaction(signed_transaction.raw_transaction)
         return tx_hash.hex()
 
     def get_transaction(self, tx_hash: str):

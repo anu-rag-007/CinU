@@ -1,49 +1,33 @@
 import json
 from pathlib import Path
-
 import numpy as np
-
 from app.face.encoder import FaceEncoder
-
 
 def load_profile(profile_path: Path):
     with open(profile_path, "r", encoding="utf-8") as file:
         return json.load(file)
 
-
 def build_registry(profiles_dir: str):
     profiles_path = Path(profiles_dir)
 
     if not profiles_path.exists():
-        raise FileNotFoundError(
-            f"Profiles directory not found: {profiles_dir}"
-        )
+        raise FileNotFoundError(f"Profiles directory not found: {profiles_dir}")
 
     encoder = FaceEncoder()
     registry = []
-
     for profile_dir in sorted(profiles_path.iterdir()):
-
         if not profile_dir.is_dir():
             continue
 
         image_path = profile_dir / "face.jpg"
         profile_path = profile_dir / "profile.json"
-
         if not image_path.exists():
-            print(
-                f"⚠ Skipping {profile_dir.name}: "
-                "face.jpg not found"
-            )
+            print(f" Skipping {profile_dir.name}:   face.jpg not found")
             continue
 
         if not profile_path.exists():
-            print(
-                f"⚠ Skipping {profile_dir.name}: "
-                "profile.json not found"
-            )
+            print(f" Skipping {profile_dir.name}:   profile.json not found")
             continue
-
         print(f"\nProcessing {profile_dir.name}...")
 
         try:
@@ -59,11 +43,7 @@ def build_registry(profiles_dir: str):
             continue
 
         if len(faces) > 1:
-            print(
-                f"⚠ Multiple faces found in "
-                f"{profile_dir.name}. Using the first face."
-            )
-
+            print(f"⚠ Multiple faces found in {profile_dir.name}. Using the first face.")
         embedding = faces[0]["embedding"]
 
         registry.append(
@@ -74,49 +54,28 @@ def build_registry(profiles_dir: str):
                 "embedding": embedding.tolist(),
             }
         )
-
-        print("✓ Face encoded")
+        print(" Face encoded")
         print(f"  Name: {profile['display_name']}")
         print(f"  Search: {profile['search_query']}")
-
     return registry
-
 
 def save_registry(registry, output_path: str):
     path = Path(output_path)
-
-    path.parent.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    path.parent.mkdir(parents=True,exist_ok=True)
 
     with open(path, "w", encoding="utf-8") as file:
-        json.dump(
-            registry,
-            file,
-            indent=2
-        )
-
-    print(f"\n✓ Registry saved to: {path}")
-
+        json.dump(registry,file,indent=2)
+    print(f"\n Registry saved to: {path}")
 
 def load_registry(registry_path: str):
     path = Path(registry_path)
 
     if not path.exists():
-        raise FileNotFoundError(
-            f"Registry not found: {registry_path}"
-        )
+        raise FileNotFoundError(f"Registry not found: {registry_path}")
 
     with open(path, "r", encoding="utf-8") as file:
         return json.load(file)
 
-
 def registry_embeddings(registry):
-    return [
-        np.asarray(
-            item["embedding"],
-            dtype=np.float32
-        )
-        for item in registry
-    ]
+    return [np.asarray(item["embedding"],dtype=np.float32)
+        for item in registry]
