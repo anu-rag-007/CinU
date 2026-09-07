@@ -21,7 +21,6 @@ def main():
 
         if not profile_path.exists():
             continue
-
         if not image_path.exists():
             continue
 
@@ -58,24 +57,17 @@ def main():
 
         try:
             selected_index = int(choice)
-
             if (1 <= selected_index <= len(profiles)):
                 break
-
             print(f"Please enter a number between 1 and {len(profiles)}.")
 
         except ValueError:
             print("Please enter a valid number.")
 
     selected = profiles[selected_index - 1]
-
     input_path.parent.mkdir(parents=True,exist_ok=True)
-
     try:
-        shutil.copy2(
-            selected["image"],
-            input_path
-        )
+        shutil.copy2(selected["image"],input_path)
 
     except Exception as error:
         print()
@@ -89,7 +81,6 @@ def main():
     print()
     print(f"Selected: {selected['display_name']}")
     print(f"Profile:  {selected['profile_id']}")
-
     print()
     print(f"Input image:")
     print(f" {input_path}")

@@ -5,7 +5,6 @@ def main():
     print("\n" + "=" * 60)
     print("             ACCISENSE BLOCKCHAIN VERIFY")
     print("=" * 60)
-
     tx_hash = input("\nEnter Polygon transaction hash: ").strip()
     if not tx_hash:
         print("❌ Transaction hash is required.")
@@ -13,10 +12,7 @@ def main():
 
     blockchain = BlockchainClient()
     print("\nFetching blockchain transaction...")
-    transaction = blockchain.web3.eth.get_transaction(
-        tx_hash
-    )
-
+    transaction = blockchain.web3.eth.get_transaction(tx_hash)
     on_chain_data = transaction["input"]
     if isinstance(on_chain_data, bytes):
         on_chain_data = on_chain_data.hex()
@@ -44,23 +40,16 @@ def main():
 
     print("\nVerifying record...")
 
-    verified = verify_record(
-        record,
-        on_chain_fingerprint,
-    )
-
+    verified = verify_record(record,on_chain_fingerprint,)
     print("\n" + "=" * 60)
-
     if verified:
-        print("             ✅ VERIFIED")
+        print("✅ VERIFIED")
         print("=" * 60)
-        print("\nThe record fingerprint matches")
-        print("the fingerprint recorded on Polygon Amoy.")
+        print("\nThe record fingerprint matches the fingerprint recorded on Polygon Amoy.")
     else:
         print("             ❌ NOT VERIFIED")
         print("=" * 60)
-        print("\nThe record does NOT match")
-        print("the fingerprint recorded on Polygon Amoy.")
+        print("\nThe record does NOT match the fingerprint recorded on Polygon Amoy.")
 
 
 if __name__ == "__main__":

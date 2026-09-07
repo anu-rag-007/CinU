@@ -75,9 +75,6 @@ CinU/
 │   │   ├── profile.py
 │   │   └── registry.py
 │   │
-│   ├── hashing/
-│   │   └── fingerprint.py
-│   │
 │   ├── search/
 │   │   ├── __init__.py
 │   │   ├── matcher.py
@@ -93,26 +90,50 @@ CinU/
 │       ├── storage.py
 │       └── verify.py
 │
-├── contracts/
 ├── data/
 │   ├── demo_01/
+|   |   ├── face.jpg
+|   |   └── profile.json 
+|   |
 │   ├── demo_02/
+|   |   ├── face.jpg
+|   |   └── profile.json
+|   |
 │   ├── demo_03/
+|   |   ├── face.jpg
+|   |   └── profile.json  
+|   | 
 │   ├── demo_04/
-│   └── demo_05/
+|   |   ├── face.jpg
+|   |   └── profile.json
+|   | 
+│   ├── demo_05/
+|   |   ├── face.jpg
+|   |   └── profile.json
+|   ├── demo_06/
+|   |   ├── face.jpg
+|   |   └── profile.json
+|   └── demo_07/
+|       ├── face.jpg
+|       └── profile.json
+|   
 ├── input/
 │   └── test.jpg
+|
 ├── output/
 │   ├── discovered_content.jpg
 │   ├── face_registry.json
 │   ├── face_1_embedding.npy
 │   ├── social_results.json
 │   └── records/
+|
 ├── tests/
 │   ├── test_hashing.py
 │   └── test_verification.py
+|
 ├── .env
 ├── .gitignore
+├── LICENSE
 ├── README.md
 └── requirements.txt
 ```
