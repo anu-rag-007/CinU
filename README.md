@@ -1,6 +1,6 @@
 # CinU — Face ID + Blockchain Verification
 
-CinU is a consent-based hackathon prototype for verifying whether public online content associated with an **authorized demo identity** can be cryptographically verified after discovery.
+CinU is a consent-based prototype for verifying whether public online content associated with an **authorized demo identity** can be cryptographically verified after discovery.
 
 ## Features
 
